@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<meta charset="utf-8">
+	<link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.18/dist/sweetalert2.all.min.js"></script>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="movie2.css">
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/bootstrap-responsive.min.css" rel="stylesheet">
+</head>
+<body>
+<script src="js/jquery.js"></script>
+<script src="js/bootstrap.min.js"></script>
+   
+<h1>    <div class="logo">
+    <span>N</span>
+    <span>E</span>
+    <span>T</span>
+    <span>F</span>
+    <span>L</span>
+    <span>E</span>
+    <span>X</span>
+  </logo></h1>
+         <h2><div class="w-full p-8 shadow-lg overflow-hidden mb-16" >
+		<a onclick="page(1)">หาหนัง</a>
+		<a onclick="page(2)" class="ml-8">หนังโปรดของฉัน</a>
+	    </div></h2>
+    
+      
+
+  
+	
+    <h3><div id="page_1">
+		<div>
+			<center>
+				<input type="text" name="" id="text_search" value="naruto" class="bg-gray-50 p-2" />
+				<button onclick="search()" class="ml-6 mb-8 p-2">ค้นหา </button>
+			</center>
+		</div>
+		<div id="list_movie" class="container mx-auto grid grid-cols-4 grid-flow-rows">
+				
+		</div>
+	</div>
+</h3>
+	
+
+	<div id="page_2" >
+		<div class="container mx-auto">
+			<h3 class="mb-8">รายการหนัง</h3>
+			<div id="user_movie">
+				
+			</div>
+		</div>
+		
+	</div>
+
+	<script type="text/javascript">
+		data_temp = []
+		data_temp_user = []
+		page(1)
+		load_favourite()
+		function page(number){
+			if(number == 1){
+				$("#page_1").show()
+				$("#page_2").hide()
+			}else{
+				$("#page_1").hide()
+				$("#page_2").show()
+			}
+		}
+
+		function search(){
+			let temp_search = $('#text_search').val()
+			$('#text_search').val("")
+			$.ajax({
+				url: 'https://api.jikan.moe/v3/search/anime?q='+temp_search,
+				type: 'GET',
+				success: function(result){
+					$('#list_movie').empty()
+					console.log(result)
+					let count = 0;
+					data_temp = []
+					Object.values(result)[3].forEach((data)=> {
+						//console.log(data)
+						data_temp.push(data)
+						$('#list_movie').append(`
+							<div class="w-70 h-40 flex m-1.5 shadow-md overflow-hidden opacity-60 rounded-md transform transition duration-500 hover:opacity-100" onclick="save_favourite(${count})">
+								<img src="${data['image_url']}">
+								<div class="col">
+									<h3 class='p-2.5'>${data['title']}</h3>
+									<p class='text-xs p-2.5 w-full'>${data['synopsis'].substring(1,50)+"..."}</p>
+								</div>
+							</div>
+							`)
+						count += 1
+					})
+				}
+			})
+		}
+
+		function save_favourite(number){
+			Swal.fire({
+  				title: 'ต้องการเพิ่มลงไปในหนังโปรดไหม?',
+  				showDenyButton: true,
+  				showCancelButton: false,
+  				confirmButtonText: `ใช่เลย`,
+  				denyButtonText: `ยังก่อน`,
+			}).then((result) => {
+ 
+  				if (result.isConfirmed) {
+  					var settings = {
+  					"url": "https://se104-project-backend.du.r.appspot.com/movies",
+  					"method": "POST",
+  					"timeout": 0,
+  					"headers": {
+    					"Content-Type": "application/json"
+  					},
+  					"data": JSON.stringify({"id":"601232100","movie":{"url":data_temp[number]['url'],"image_url":data_temp[number]['image_url'],"title":data_temp[number]['title'],"synopsis":data_temp[number]['synopsis'],"type":data_temp[number]['type'],"episodes":data_temp[number]['episodes'],"score":data_temp[number]['score'],"rated":data_temp[number]['rated']}}),
+					};
+
+					$.ajax(settings).done(function (response) {
+  						Swal.fire('เยี่ยมไปเลย!', '', 'success')
+  						load_favourite()
+  						page(2)
+
+					});
+    				
+  				} else if (result.isDenied) {
+    				
+  				}
+			})
+		}
+
+		function load_favourite(){
+			$.ajax({
+				url: 'https://se104-project-backend.du.r.appspot.com/movies/601232100',
+				type: 'GET',
+				success: function(result){
+					$('#user_movie').empty()
+					console.log(result)
+					let count = 0;
+					data_temp_user = []
+					Object.values(result).forEach((data)=> {
+						//console.log(data)
+						data_temp_user.push(data)
+						$('#user_movie').append(`
+							<div class="w-70 h-40 flex m-1.5 shadow-md overflow-hidden opacity-60 rounded-md transform transition duration-500 hover:opacity-100" >
+								<img src="${data['image_url']}">
+								<div class="col">
+									<h3 class='p-2.5'>${data['title']}</h3>
+									<p class='text-xs p-2.5 w-full'>${data['synopsis'].substring(1,50)+"..."}</p>
+									<div class="rows container mx-auto mt-4"> 
+										<center>
+											<button onclick="details(${count})">รายละเอียด</button>
+											<button onclick="delete_movie(${count})" class="ml-8 text-red-600">ลบ</button>
+										</center>
+									</div>
+								</div>
+							</div>
+							`)
+						count += 1
+					})
+				}
+			})
+		}
+		
+		function delete_movie(number){
+			Swal.fire({
+  				title: 'ต้องการลบออกจากหนังโปรดหราา?',
+  				showDenyButton: true,
+  				showCancelButton: false,
+  				confirmButtonText: `ใช่เลย`,
+  				denyButtonText: `ยังก่อน`,
+			}).then((result) => {
+ 
+  				if (result.isConfirmed) {
+  					var settings = {
+  						"url": "https://se104-project-backend.du.r.appspot.com/movie?id=601232100&&movieId="+data_temp_user[number]['id'],
+  						"method": "DELETE",
+  						"timeout": 0,
+					};
+
+					$.ajax(settings).done(function (response) {
+  						Swal.fire('ลบเรียบร้อย!', '', 'success')
+  						load_favourite()
+					});
+    				
+  				} else if (result.isDenied) {
+    				
+  				}
+			})
+			
+		}
+		
+		function details(number){
+			Swal.fire('', data_temp_user[number]['synopsis'], 'info')
+		}
+	</script>
+</body>
+</html>
